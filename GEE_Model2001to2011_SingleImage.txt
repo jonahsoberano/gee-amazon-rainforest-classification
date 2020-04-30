@@ -1,0 +1,251 @@
+var forest = 
+    /* color: #16d60a */
+    /* shown: false */
+    ee.Feature(
+        ee.Geometry.MultiPolygon(
+            [[[[-50.06461424005282, -4.542952003717665],
+               [-50.30906004083407, -4.835852187796668],
+               [-50.01242918145907, -4.950788167890855],
+               [-49.90256590020907, -4.603184441157681]]],
+             [[[-50.33103269708407, -4.945315475150948],
+               [-50.23215574395907, -5.125890157233565],
+               [-50.10581297052157, -5.027401089262606]]],
+             [[[-50.29571235218721, -3.6379126804035606],
+               [-49.98260200062471, -4.005135697402902],
+               [-49.86724555531221, -3.818803361622926]]],
+             [[[-50.59934174928202, -3.5021764725798703],
+               [-50.32193696412577, -3.669389916977211],
+               [-50.18186128053202, -3.537814677442324]]]]),
+        {
+          "class": 0,
+          "system:index": "0"
+        }),
+    forestLoss = 
+    /* color: #ff0c00 */
+    /* shown: false */
+    ee.Feature(
+        ee.Geometry.MultiPolygon(
+            [[[[-50.558999036813674, -4.515571028869493],
+               [-50.751260507974855, -5.060232995967994],
+               [-50.42990905994499, -5.098534502364241],
+               [-50.50406588013727, -4.915215396701614],
+               [-50.38871024361165, -4.575806844505142]]],
+             [[[-50.42990965020907, -4.069135946828016],
+               [-50.28708738458407, -4.523786078937164],
+               [-50.00693601739657, -4.370440598363788],
+               [-50.10858160262105, -4.082851445611348]]],
+             [[[-49.32029050958407, -4.343054144005936],
+               [-49.15549558770907, -4.7044729195715105],
+               [-48.82590574395907, -4.551165815668589]]]]),
+        {
+          "class": 1,
+          "system:index": "0"
+        }),
+    nonforest = 
+    /* color: #000000 */
+    /* shown: false */
+    ee.Feature(
+        ee.Geometry.MultiPolygon(
+            [[[[-49.65451753053202, -4.152691161401981],
+               [-49.59683930787577, -4.289647704130296],
+               [-49.48972260865702, -4.481345443387924],
+               [-49.449897169203894, -4.386871991178533]]],
+             [[[-49.75425047052157, -4.203367894408552],
+               [-49.75699705255282, -4.381394900339725],
+               [-49.59769529474032, -4.329360543616182]]],
+             [[[-49.445259992005944, -4.657936780594423],
+               [-49.431527081849694, -4.824904879250762],
+               [-49.354622784974694, -4.740057281793144]]]]),
+        {
+          "class": 2,
+          "system:index": "0"
+        }),
+    forestGain = 
+    /* color: #ffc82d */
+    /* shown: false */
+    ee.Feature(
+        ee.Geometry.MultiPolygon(
+            [[[[-49.72129148614657, -4.983623371707426],
+               [-49.90805906427157, -5.2462450351178305],
+               [-49.48508543145907, -5.290004718558425]]],
+             [[[-49.57278630614972, -4.016333705329407],
+               [-49.51236150146222, -4.249185960742747],
+               [-49.45468327880597, -4.194403376702454]]],
+             [[[-49.96554753661847, -4.468276884544677],
+               [-49.78976628661847, -4.618864122081563],
+               [-49.78152654052472, -4.561370893433783]]]]),
+        {
+          "class": 3,
+          "system:index": "0"
+        });
+
+//// load landsat scenes for 2001 & 2011 in Brazil
+// landsat 5 - 2011-07-29
+var ls5 = ee.Image('LANDSAT/LT5_L1T_TOA_FMASK/LT52240632011210CUB01');
+print(ls5);
+
+// landsat 7 - 2001-07-09
+var ls7 = ee.Image('LANDSAT/LE7_L1T_TOA_FMASK/LE72240632001190EDC00');
+print(ls7);
+
+// plot true colour composites
+Map.addLayer(ls5, {bands: ['B3', 'B2', 'B1'], gamma: 1.5}, '2011');
+Map.addLayer(ls7, {bands: ['B3', 'B2', 'B1'], gamma: 1.5}, '2001');
+
+//// landsat scenes for 2001 & 2011 in Brazil
+// landsat 5 - 2011
+var ls5 = ee.Image('LANDSAT/LT5_L1T_TOA_FMASK/LT52240632011210CUB01');
+// create binary mask band for clouds and shadows
+var ls5Mask = ls5.select('fmask').lt(2);
+// select bands 1-5 and rename to append year
+ls5 = ls5.
+  select(['B1', 'B2', 'B3', 'B4', 'B5']).
+  rename(['B1_2011', 'B2_2011', 'B3_2011', 'B4_2011', 'B5_2011']);
+// mask out clouds
+ls5 = ls5.updateMask(ls5Mask);
+
+// landsat 7 - 2001
+var ls7 = ee.Image('LANDSAT/LE7_L1T_TOA_FMASK/LE72240632001190EDC00');
+// create binary mask band for clouds and shadows
+var ls7Mask = ls7.select('fmask').lt(2);
+// select bands 1-5 and rename to append year
+ls7 = ls7.
+  select(['B1', 'B2', 'B3', 'B4', 'B5']).
+  rename(['B1_2001', 'B2_2001', 'B3_2001', 'B4_2001', 'B5_2001']);
+// mask out clouds
+ls7 = ls7.updateMask(ls7Mask);
+
+// plot true colour composites
+Map.addLayer(ls5, {bands: ['B3_2011', 'B2_2011', 'B1_2011'], gamma: 1.5}, 'Cloud Cover 2011');
+Map.addLayer(ls7, {bands: ['B3_2001', 'B2_2001', 'B1_2001'], gamma: 1.5}, 'Cloud Cover 2001');
+Map.centerObject(ls7, 9);
+
+//// landsat scenes for 2001 & 2011 in Brazil
+// landsat 5 - 2011
+var ls5 = ee.Image('LANDSAT/LT5_L1T_TOA_FMASK/LT52240632011210CUB01');
+// create binary mask band for clouds and shadows
+var ls5Mask = ls5.select('fmask').lt(2);
+// select bands 1-5 and rename to append year
+ls5 = ls5.
+  select(['B1', 'B2', 'B3', 'B4', 'B5']).
+  rename(['B1_2011', 'B2_2011', 'B3_2011', 'B4_2011', 'B5_2011']);
+// mask out clouds
+ls5 = ls5.updateMask(ls5Mask);
+
+// landsat 7 - 2001
+var ls7 = ee.Image('LANDSAT/LE7_L1T_TOA_FMASK/LE72240632001190EDC00');
+// create binary mask band for clouds and shadows
+var ls7Mask = ls7.select('fmask').lt(2);
+// select bands 1-5 and rename to append year
+ls7 = ls7.
+  select(['B1', 'B2', 'B3', 'B4', 'B5']).
+  rename(['B1_2001', 'B2_2001', 'B3_2001', 'B4_2001', 'B5_2001']);
+// mask out clouds
+ls7 = ls7.updateMask(ls7Mask);
+
+// stack to create multi-date composite
+var combined = ls7.addBands(ls5);
+// mask clouds
+var cloudMask = combined.updateMask(ls7Mask).updateMask(ls5Mask);
+
+// plot true colour composites
+Map.addLayer(ls5, {bands: ['B3_2011', 'B2_2011', 'B1_2011'], gamma: 1.5}, '2011');
+Map.addLayer(ls7, {bands: ['B3_2001', 'B2_2001', 'B1_2001'], gamma: 1.5}, '2001');
+// plot multi-date composite
+Map.addLayer(combined, {bands: ['B5_2011', 'B5_2001', 'B5_2001'], gamma: 1.5}, 'combined');
+Map.centerObject(combined, 9);
+
+// subsample training polygons with random points
+// this ensures all classes have same sample size
+// also EE can't handle too many cells at once
+var trainingLayers = [forest, forestLoss, nonforest, forestGain];
+var n = 500;
+// loop over training layers
+for (var i = 0; i < trainingLayers.length; i++) { 
+  // sample points within training polygons
+  var pts = ee.FeatureCollection
+    .randomPoints(trainingLayers[i].geometry(), n);
+  // add class
+  var thisClass = trainingLayers[i].get('class');
+  pts = pts.map(function(f) {
+    return f.set({class: thisClass});
+  });
+  // extract raster cell values
+  var training = combined.sampleRegions(pts, ['class'], 30);
+  // combine trainging regions together
+  if (i === 0) {
+    var trainingData = training;
+  } else {
+    trainingData = trainingData.merge(training);
+  }
+}
+
+//// classify with random forests
+// use bands 1-5 from each time period
+var bands = ['B1_2001', 'B1_2011', 'B2_2001', 'B2_2011', 'B3_2001', 'B3_2011',
+             'B4_2001', 'B4_2011', 'B5_2001', 'B5_2011'];
+// fit a random forests model
+var classifier = ee.Classifier.randomForest(100)
+  .train(trainingData, 'class', bands);
+// produce the forest change map
+var classified = combined.classify(classifier);
+var p = ['00ff00', 'ff0000', '000000', '0000ff'];
+// display
+Map.addLayer(classified, {palette: p, min: 0, max: 3}, 'classification');
+
+// accuracy assessement
+var confMat = classifier.confusionMatrix();
+print('Confusion matrix: ', confMat);
+print('Overall accuracy: ', confMat.accuracy());
+
+var classifier2 = ee.Classifier.svm().train(trainingData, 'class', bands);
+var confMat2 = classifier2.confusionMatrix();
+print('Confusion matrix: ', confMat2);
+print('Overall accuracy: ', confMat2.accuracy());
+var classified2 = combined.classify(classifier2);
+Map.addLayer(classified2, {palette: p, min: 0, max: 3}, 'SVM');
+
+var classifier3 = ee.Classifier.cart().train(trainingData, 'class', bands);
+var confMat3 = classifier3.confusionMatrix();
+print('Confusion matrix: ', confMat3);
+print('Overall accuracy: ', confMat3.accuracy());
+var classified3 = combined.classify(classifier3);
+Map.addLayer(classified3, {palette: p, min: 0, max: 3}, 'Cartesian Regression Classifier');
+
+var classifier4 = ee.Classifier.naiveBayes(.5).train(trainingData, 'class', bands);
+var confMat4 = classifier4.confusionMatrix();
+print('Confusion matrix: ', confMat4);
+print('Overall accuracy: ', confMat4.accuracy());
+var classified4 = combined.classify(classifier4);
+Map.addLayer(classified4, {palette: p, min: 0, max: 3}, 'SGD');
+
+// subsample testing polygons with random points
+// this ensures all classes have same sample size
+// also EE can't handle too many cells at once
+var testingLayers = [forest, forestLoss, nonforest, forestGain];
+var n = 300;
+// loop over testing layers
+for (var i = 0; i < testingLayers.length; i++) { 
+  // sample points within testing polygons
+  var pts = ee.FeatureCollection
+    .randomPoints(testingLayers[i].geometry(), n, 1);
+  // add class
+  var thisClass = testingLayers[i].get('class');
+  pts = pts.map(function(f) {
+    return f.set({class: thisClass});
+  });
+  // extract raster cell values
+  var testing = combined.sampleRegions(pts, ['class'], 30);
+  // combine testing regions together
+  if (i === 0) {
+    var testingData = testing;
+  } else {
+    testingData = testingData.merge(testing);
+  }
+}
+
+// Classify the validation data
+var validated = testingData.classify(classifier);
+var testAccuracy = validated.errorMatrix('class', 'classification');
+print('Validation error matrix: ', testAccuracy);
+print('Validation overall accuracy: ', testAccuracy.accuracy());
